@@ -28,8 +28,17 @@ func (t IOThrottler) SendN(n int64) {
 
 // Create a new IOThrottler with specified bandwith limitation
 func NewIOThrottler(bandwidth int64) (t *IOThrottler) {
-	sec := int64(time.Second)
 	t = &IOThrottler{c: make(chan int64)}
+	if bandwidth <= 0 {
+		go func() {
+			for {
+				n := <-t.c
+			}
+		}()
+		return
+	}
+
+	sec := int64(time.Second)
 	go func() {
 		n := <-t.c // Wait for first hit
 		time.Sleep(time.Duration(n * sec / bandwidth))
