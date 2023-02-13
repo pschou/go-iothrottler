@@ -32,7 +32,7 @@ func NewIOThrottler(bandwidth int64) (t *IOThrottler) {
 	if bandwidth <= 0 {
 		go func() {
 			for {
-				n := <-t.c
+				<-t.c
 			}
 		}()
 		return
