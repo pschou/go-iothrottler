@@ -8,30 +8,19 @@ import (
 )
 
 func ExampleNewIOThrottler() {
-	throttler := iothrottler.NewIOThrottler(100 << 20) // simulate a 100Mbps
-	tick, now := time.Now(), time.Time{}
-	throttler.SendN(50 << 20) // Send 100Mb
+	fmt.Println("making new throttler")
+	throttler := iothrottler.NewIOThrottler(10000000, 1500, 12)
+	for j := 0; j < 5; j++ {
+		fmt.Println("second", j)
+		tick := time.Now()
 
-	now = time.Now()
-	fmt.Println("0s Tock:", now.Sub(tick).Round(time.Second/10))
-	tick = now
+		// Send 100 packets
+		for i := 0; i < 812; i++ {
+			<-throttler.C
+		}
 
-	throttler.SendN(200 << 20) // Send 200Mb
-
-	now = time.Now()
-	fmt.Println("0.5s Tock:", now.Sub(tick).Round(time.Second/10))
-	tick = now
-
-	throttler.SendN(10 << 20) // Send 10Mb
-
-	now = time.Now()
-	fmt.Println("2s Tock:", now.Sub(tick).Round(time.Second/10))
-	tick = now
-
-	throttler.SendN(0) // Must send again to hit delay
-
-	now = time.Now()
-	fmt.Println("0.1s Tock:", now.Sub(tick).Round(time.Second/10))
+		fmt.Println("packets:", time.Now().Sub(tick))
+	}
 	// Output:
 	// 0s Tock: 0s
 	// 0.5s Tock: 500ms

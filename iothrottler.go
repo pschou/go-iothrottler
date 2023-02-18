@@ -18,34 +18,54 @@ import (
 	"time"
 )
 
+// IOThrottler struct with a channel to release packets at a given rate
 type IOThrottler struct {
-	c chan int64
-}
-
-func (t IOThrottler) SendN(n int64) {
-	t.c <- n
+	C      chan int8
+	bw, fs int
+	t      time.Duration
+	run    bool
 }
 
 // Create a new IOThrottler with specified bandwith limitation
-func NewIOThrottler(bandwidth int64) (t *IOThrottler) {
-	t = &IOThrottler{c: make(chan int64)}
-	if bandwidth <= 0 {
-		go func() {
-			for {
-				<-t.c
-			}
-		}()
-		return
+func NewIOThrottler(Bandwidth, MTU, frameSpacing int) (t *IOThrottler) {
+	t = &IOThrottler{
+		bw:  Bandwidth,
+		fs:  frameSpacing,
+		C:   make(chan int8),
+		t:   time.Second * 8 * time.Duration(MTU+26+frameSpacing) / time.Duration(Bandwidth),
+		run: true,
 	}
-
-	sec := int64(time.Second)
-	go func() {
-		n := <-t.c // Wait for first hit
-		time.Sleep(time.Duration(n * sec / bandwidth))
-		for {
-			n = <-t.c // Get next request
-			time.Sleep(time.Duration(n * sec / bandwidth))
+	go func(iot *IOThrottler) {
+		//fmt.Println("per frame:", t.t)
+		var now, next time.Time
+		var step time.Duration
+		next = time.Now().Add(iot.t)
+		for iot.run {
+			iot.C <- 1
+			now = time.Now()
+			step = next.Sub(now)
+			if step > 0 {
+				time.Sleep(step)
+				next = next.Add(iot.t)
+			} else {
+				next = now.Add(iot.t)
+			}
 		}
-	}()
+	}(t)
 	return
+}
+
+// Gradually affect the MTU
+func (t *IOThrottler) SkewMTU(MTU int) {
+	t.t = (11*t.t + time.Second*8*time.Duration(MTU+26+t.fs)/time.Duration(t.bw)) / 12
+}
+
+// Set the MTU size
+func (t *IOThrottler) SetMTU(MTU int) {
+	t.t = time.Second * 8 * time.Duration(MTU+26+t.fs) / time.Duration(t.bw)
+}
+
+// Stop and close the channel
+func (t *IOThrottler) Stop() {
+	t.run = false
 }
