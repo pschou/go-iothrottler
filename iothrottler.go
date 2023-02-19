@@ -19,23 +19,23 @@ import (
 )
 
 // IOThrottler struct with a channel to release packets at a given rate
-type IOThrottler struct {
-	C      chan int8
-	bw, fs int
-	t      time.Duration
-	run    bool
+type Limit struct {
+	C             chan int8
+	Bandwidth, fs int
+	t             time.Duration
+	run           bool
 }
 
-// Create a new IOThrottler with specified bandwith limitation
-func NewIOThrottler(Bandwidth, MTU, frameSpacing int) (t *IOThrottler) {
-	t = &IOThrottler{
-		bw:  Bandwidth,
-		fs:  frameSpacing,
-		C:   make(chan int8),
-		t:   time.Second * 8 * time.Duration(MTU+26+frameSpacing) / time.Duration(Bandwidth),
-		run: true,
+// Create a new Limit with specified bandwith limitation
+func NewLimit(Bandwidth, MTU, frameSpacing int) (t *Limit) {
+	t = &Limit{
+		Bandwidth: Bandwidth,
+		fs:        frameSpacing,
+		C:         make(chan int8),
+		t:         time.Second * 8 * time.Duration(MTU+26+frameSpacing) / time.Duration(Bandwidth),
+		run:       true,
 	}
-	go func(iot *IOThrottler) {
+	go func(iot *Limit) {
 		//fmt.Println("per frame:", t.t)
 		var now, next time.Time
 		var step time.Duration
@@ -56,16 +56,16 @@ func NewIOThrottler(Bandwidth, MTU, frameSpacing int) (t *IOThrottler) {
 }
 
 // Gradually affect the MTU
-func (t *IOThrottler) SkewMTU(MTU int) {
-	t.t = (11*t.t + time.Second*8*time.Duration(MTU+26+t.fs)/time.Duration(t.bw)) / 12
+func (t *Limit) SkewMTU(MTU int) {
+	t.t = (11*t.t + time.Second*8*time.Duration(MTU+26+t.fs)/time.Duration(t.Bandwidth)) / 12
 }
 
 // Set the MTU size
-func (t *IOThrottler) SetMTU(MTU int) {
-	t.t = time.Second * 8 * time.Duration(MTU+26+t.fs) / time.Duration(t.bw)
+func (t *Limit) SetMTU(MTU int) {
+	t.t = time.Second * 8 * time.Duration(MTU+26+t.fs) / time.Duration(t.Bandwidth)
 }
 
 // Stop and close the channel
-func (t *IOThrottler) Stop() {
+func (t *Limit) Stop() {
 	t.run = false
 }

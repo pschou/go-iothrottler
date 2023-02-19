@@ -7,23 +7,20 @@ import (
 	"github.com/pschou/go-iothrottler"
 )
 
-func ExampleNewIOThrottler() {
+func ExampleNewLimit() {
 	fmt.Println("making new throttler")
-	throttler := iothrottler.NewIOThrottler(10000000, 1500, 12)
-	for j := 0; j < 5; j++ {
-		fmt.Println("second", j)
-		tick := time.Now()
+	throttler := iothrottler.NewLimit(10000000, 1500, 12)
 
-		// Send 100 packets
-		for i := 0; i < 812; i++ {
-			<-throttler.C
-		}
+	tick := time.Now()
 
-		fmt.Println("packets:", time.Now().Sub(tick))
+	// Send 100 packets
+	<-throttler.C
+	for i := 0; i < 812; i++ {
+		<-throttler.C
 	}
+
+	fmt.Println("812 packets in time:", time.Now().Sub(tick).Round(time.Second/100))
 	// Output:
-	// 0s Tock: 0s
-	// 0.5s Tock: 500ms
-	// 2s Tock: 2s
-	// 0.1s Tock: 100ms
+	// making new throttler
+	// 812 packets in time: 1s
 }
