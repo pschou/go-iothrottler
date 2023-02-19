@@ -27,12 +27,12 @@ type Limit struct {
 }
 
 // Create a new Limit with specified bandwith limitation
-func NewLimit(Bandwidth, MTU, frameSpacing int) (t *Limit) {
+func NewLimit(Bandwidth, MTU, frameSpec int) (t *Limit) {
 	t = &Limit{
 		Bandwidth: Bandwidth,
-		fs:        frameSpacing,
+		fs:        frameSpec,
 		C:         make(chan int8),
-		t:         time.Second * 8 * time.Duration(MTU+26+frameSpacing) / time.Duration(Bandwidth),
+		t:         time.Second * 8 * time.Duration(MTU+frameSpec) / time.Duration(Bandwidth),
 		run:       true,
 	}
 	go func(iot *Limit) {

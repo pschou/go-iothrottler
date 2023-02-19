@@ -9,7 +9,7 @@ import (
 
 func ExampleNewLimit() {
 	fmt.Println("making new throttler")
-	throttler := iothrottler.NewLimit(10000000, 1500, 12)
+	throttler := iothrottler.NewLimit(10000000, 1500, 26+12)
 
 	tick := time.Now()
 
