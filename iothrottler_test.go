@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pschou/go-bunit"
 	"github.com/pschou/go-iothrottler"
 )
 
 func ExampleNewLimit() {
 	fmt.Println("making new throttler")
-	throttler := iothrottler.NewLimit(10000000, 1500, 26+12)
+	throttler := iothrottler.NewLimit(bunit.NewBitRate(10000000, time.Second), 1500, 26+12)
 
 	tick := time.Now()
 
